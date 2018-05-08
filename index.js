@@ -1,6 +1,35 @@
 "use strict";
 const Alexa = require("alexa-sdk");
 
+function friendlyTime (timeStr) {
+  let [hours, minutes] = timeStr.split(":");
+  let meridian;
+  let friendlyStr;
+
+  hours = parseInt(hours);
+
+  if (hours > 12) {
+    hours = hours - 12;
+    meridian = 'p.m';
+  } else {
+    meridian = 'a.m';
+  }
+
+  if (hours === 0) {
+    hours = 12;
+  }
+
+  if (minutes === "15") {
+    friendlyStr = `a quarter after ${hours} ${meridian}`;
+  } else if (minutes === "00") {
+    friendlyStr = `${hours} ${meridian}`;
+  } else {
+    friendlyStr = `${hours} ${minutes} ${meridian}`;
+  }
+
+  return friendlyStr;
+}
+
 const languageStrings = {
   "en-US": {
     translation: {
@@ -17,7 +46,24 @@ const handlers = {
   LaunchRequest () {
     this.emit("BuyTicketsIntent");
   },
-  BuyTicketsIntent() {},
+  BuyTicketsIntent() {
+
+    if(this.event.request.dialogState !== "COMPLETED") {
+      this.emit(":delegate");
+    } else {
+      const movie = {
+        NumberTickets: ParseFloat(this.event.request.intent.slots.NumberTickets.value),
+        MovieName: this.event.request.intent.slots.MovieName.value
+      };
+      movie.Price = movie.NumberTickets * 10;
+      if(this.event.request.intent.slots.Discount.value) {
+         movie.Price = movie.Price / 2;
+      }
+      const speak = this.t("BuyTickets", movie);
+      this.response.speak(speak);
+      this.emit(":responseReady");
+    }
+  },
 
   Unhandled() {
     const speak = this.t(["Unhandled", languageStrings.fallback.Unhandled]);
