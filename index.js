@@ -47,9 +47,18 @@ const handlers = {
     this.emit("BuyTicketsIntent");
   },
   BuyTicketsIntent() {
-
     if(this.event.request.dialogState !== "COMPLETED") {
-      this.emit(":delegate");
+      const intent = this.event.request.intent;
+
+  if(
+    intent.slots.MovieTime.value &&
+    intent.slots.MovieTime.confirmationStatus !== "CONFIRMED"
+  ) {
+    let movieTime = intent.slots.MovieTime.value;
+    movieTime = friendlyTime(intent.slots.MovieTime.value);
+    intent.slots.MovieTime.value = movieTime;
+  }
+      this.emit(":delegate", intent);
     } else {
       const movie = {
         NumberTickets: ParseFloat(this.event.request.intent.slots.NumberTickets.value),
